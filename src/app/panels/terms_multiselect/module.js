@@ -1,5 +1,5 @@
 /*
-  ## Terms
+  ## Multivalue Terms (based on Terms)
 
   ### Parameters
   * style :: A hash of css styles
@@ -21,11 +21,13 @@ function (angular, app, _, $, kbn) {
   'use strict';
 
   var DEBUG = false; // DEBUG mode
+  var componentItemType = 'terms';
+  var componentIdCounter = 0; // ID counter for instances on that module
 
-  var module = angular.module('kibana.panels.terms', []);
+  var module = angular.module('kibana.panels.terms_multiselect', []);
   app.useModule(module);
 
-  module.controller('terms', function($scope, querySrv, dashboard, filterSrv) {
+  module.controller('terms_multiselect', function($scope, querySrv, dashboard, filterSrv) {
       $scope.panel.visibleHeight = 300;
       $scope.panelMeta = {
       modals : [
@@ -39,8 +41,8 @@ function (angular, app, _, $, kbn) {
       editorTabs : [
         {title:'Queries', src:'app/partials/querySelect.html'}
       ],
-      status  : "Stable",
-      description : "Displays the results of a Solr facet as a pie chart, bar chart, or a table. Newly added functionality displays min/max/mean/sum of a stats field, faceted by the Solr facet field, again as a pie chart, bar chart or a table."
+      status  : "Under development",
+      description : "Displays the results of a Solr multisilect facet as a pie chart, bar chart, or a table. Newly added functionality displays min/max/mean/sum of a stats field, faceted by the Solr facet field, again as a pie chart, bar chart or a table."
     };
 
     // Set and populate defaults
@@ -74,6 +76,7 @@ function (angular, app, _, $, kbn) {
 
     $scope.init = function () {
       $scope.hits = 0;
+      $scope.componentId = ++componentIdCounter;
 
       $scope.$on('refresh',function(){
         $scope.get_data();
@@ -127,16 +130,16 @@ function (angular, app, _, $, kbn) {
       // var start_time = filterSrv.getStartTime();
       // var end_time = filterSrv.getEndTime();
       var wt_json = '&wt=json';
-      var rows_limit = '&rows=0' // for terms, we do not need the actual response doc, so set rows=0
+      var rows_limit = '&rows=0'; // for terms, we do not need the actual response doc, so set rows=0
       // var facet_gap = '%2B1DAY';
       var facet = '';
 
       if ($scope.panel.mode === 'count') {
-        facet = '&facet=true&facet.field=' + $scope.panel.field + '&facet.limit=' + $scope.panel.size;
+        facet = '&facet=true&facet.field={!ex=' + $scope.getSolrTag() + '}' + $scope.panel.field + '&facet.limit=' + $scope.panel.size;
       } else {
         // if mode != 'count' then we need to use stats query
         // stats does not support something like facet.limit, so we have to sort and limit the results manually.
-        facet = '&stats=true&stats.facet=' + $scope.panel.field + '&stats.field=' + $scope.panel.stats_field;
+        facet = '&stats=true&stats.facet={!ex=' + $scope.getSolrTag() + '}' + $scope.panel.field + '&stats.field=' + $scope.panel.stats_field;
       }
 
       // Set the panel's query
@@ -171,7 +174,8 @@ function (angular, app, _, $, kbn) {
               var count = v[i];
               // if count = 0, do not add it to the chart, just skip it
               if (count == 0) continue;
-              var slice = { label : term, data : [[k,count]], actions: true};
+              var isSelected = !!$scope.getFilter(term); 
+              var slice = { label : term, data : [[k,count]], actions: true, isSelected: isSelected};
               $scope.data.push(slice);
             };
           });
@@ -197,14 +201,14 @@ function (angular, app, _, $, kbn) {
           k++;
         });
 
-        $scope.data.push({label:'Missing field',
-          // data:[[k,results.facets.terms.missing]],meta:"missing",color:'#aaa',opacity:0});
-          // TODO: Hard coded to 0 for now. Solr faceting does not provide 'missing' value.
-          data:[[k,0]],meta:"missing",color:'#aaa',opacity:0});
-        $scope.data.push({label:'Other values',
-          // data:[[k+1,results.facets.terms.other]],meta:"other",color:'#444'});
-          // TODO: Hard coded to 0 for now. Solr faceting does not provide 'other' value. 
-          data:[[k+1,0]],meta:"other",color:'#444'});
+//        $scope.data.push({label:'Missing field',
+//          // data:[[k,results.facets.terms.missing]],meta:"missing",color:'#aaa',opacity:0});
+//          // TODO: Hard coded to 0 for now. Solr faceting does not provide 'missing' value.
+//          data:[[k,0]],meta:"missing",color:'#aaa',opacity:0});
+//        $scope.data.push({label:'Other values',
+//          // data:[[k+1,results.facets.terms.other]],meta:"other",color:'#444'});
+//          // TODO: Hard coded to 0 for now. Solr faceting does not provide 'other' value. 
+//          data:[[k+1,0]],meta:"other",color:'#444'});
 
         if (DEBUG) { console.debug('terms: $scope.data = ',$scope.data); }
 
@@ -212,18 +216,54 @@ function (angular, app, _, $, kbn) {
       });
     };
 
-    $scope.build_search = function(term,negate) {
-      if(_.isUndefined(term.meta)) {
-        filterSrv.set({type:'terms',field:$scope.panel.field,value:term.label,
-          mandate:(negate ? 'mustNot':'must')});
-      } else if(term.meta === 'missing') {
-        filterSrv.set({type:'exists',field:$scope.panel.field,
-          mandate:(negate ? 'must':'mustNot')});
-      } else {
-        return;
-      }
+    $scope.getSolrTag = function() {
+      return componentItemType + '_' + $scope.panel.field + '_' + $scope.componentId;
+    };
+
+    $scope.getFilter = function(fieldValue) {
+      var foundFilters = filterSrv.filtersByTypeAndFieldAndValue(componentItemType, $scope.panel.field, fieldValue);
+      return (foundFilters && foundFilters.length > 0)? foundFilters[0] : null;
+    };
+
+    $scope.search_multiselect = function() {
+      _.each($scope.data, function(v) {
+        var isFilterPresent = !!$scope.getFilter(v.label);
+        if (v.isSelected) {
+          if (!isFilterPresent) {
+            filterSrv.set({type: componentItemType,field:$scope.panel.field,value:v.label, mandate:'must', solrTag: $scope.getSolrTag()});
+          }
+        } else {
+          if (isFilterPresent) { // remove if present
+            filterSrv.removeByTypeAndFieldAndValue(componentItemType, $scope.panel.field, v.label);
+          }
+        }
+      });
       dashboard.refresh();
     };
+
+/*    $scope.toggle_multiselect = function(term) {
+      var defaultType = 'terms';
+      if(_.isUndefined(term.meta)) {
+        filterSrv.set({type:defaultType,field:$scope.panel.field,value:term.label, mandate:'must', solrTag: $scope.getSolrTag()});
+      } else if(term.meta === 'missing') {
+        filterSrv.set({type:'exists',field:$scope.panel.field, mandate:'mustNot', solrTag: $scope.getSolrTag()});
+      } else if(term.meta === defaultType) { // have it - then remove (un-checked box)
+        filterSrv.removeByTypeAndField(defaultType, $scope.panel.field);
+      }
+    };*/
+
+//    $scope.build_search = function(term,negate) {
+//      if(_.isUndefined(term.meta)) {
+//        filterSrv.set({type:'terms',field:$scope.panel.field,value:term.label,
+//          mandate:(negate ? 'mustNot':'must')});
+//      } else if(term.meta === 'missing') {
+//        filterSrv.set({type:'exists',field:$scope.panel.field,
+//          mandate:(negate ? 'must':'mustNot')});
+//      } else {
+//        return;
+//      }
+//      dashboard.refresh();
+//    };
 
     $scope.set_refresh = function (state) {
       $scope.refresh = state;
