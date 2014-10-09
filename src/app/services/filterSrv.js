@@ -149,7 +149,6 @@ define([
       var start_time, end_time, time_field;
       var filter_fq ='';
       var filter_either = [];
-      var filter_either_tagged = {}; // map: tag -> array of filter strings
 
       // Loop through the list to find the time field, usually it should be in self.list[0]
       _.each(self.list, function(v,k) {
@@ -173,20 +172,11 @@ define([
           }
         } else if (v.type == 'terms') {
           if (v.mandate == 'must') {
-            filter_fq = filter_fq + '&fq=' + (v.solrTag? ('{!tag=' + v.solrTag + '}') : '') + v.field + ':"' + v.value + '"';
+            filter_fq = filter_fq + '&fq=' + v.field + ':"' + v.value + '"';
           } else if (v.mandate == 'mustNot') {
             filter_fq = filter_fq + '&fq=-' + v.field + ':"' + v.value + '"';
           } else if (v.mandate == 'either') {
-            if (v.solrTag) {
-              var arr = filter_either_tagged[v.solrTag];
-              if (!arr) {
-                arr = [];
-                filter_either_tagged[v.solrTag] = arr;
-              }
-              arr.push(v.field + ':"' + v.value + '"');
-            } else {
-              filter_either.push(v.field + ':"' + v.value + '"');
-            }
+            filter_either.push(v.field + ':"' + v.value + '"');
           }
         } else if (v.type == 'field') {
           // v.query contains double-quote around it.
@@ -230,11 +220,6 @@ define([
         filter_fq = filter_fq + '&fq=(' + filter_either.join(' OR ') + ')';
       }
 
-      // add tagged filter_either array values, if exists
-      for (var tag in filter_either_tagged) {
-        filter_fq = filter_fq + '&fq=' + '{!tag=' + tag + '}' + '(' + filter_either_tagged[tag].join(' OR ') + ')';
-      }
-
       if (noTime) {
         return filter_fq;
       } else {
@@ -252,7 +237,7 @@ define([
         }
       });
       return time_field;
-    };
+    }
 
     // Get range field for Solr query
     this.getRangeField = function() {
@@ -264,7 +249,7 @@ define([
         }
       });
       return range_field;
-    };
+    }
 
     // Get start time for Solr query (e.g. facet.range.start)
     this.getStartTime = function() {
@@ -319,12 +304,12 @@ define([
     this.idsByTypeAndField = function(type,field,inactive){
       var _require = inactive ? {type:type} : {type:type, field:field, active:true};
       return _.pluck(_.where(self.list,_require),'id');
-    };
+    }
 
     // this method used to get the range filter with specific field
     this.getRangeFieldFilter = function(type, field, inactive){
       return _.pick(self.list, self.idsByTypeAndField(type, field, inactive));
-    };
+    }
 
     this.removeByType = function(type) {
       var ids = self.idsByType(type);
@@ -341,26 +326,6 @@ define([
         self.remove(id);
       });
       return ids;
-    };
-
-    // remove filter by type and field and value
-    this.removeByTypeAndFieldAndValue = function(type,field,value) {
-      var ids = self.idsByTypeAndFieldAndValue(type,field,value);
-      _.each(ids, function(id) {
-        self.remove(id);
-      });
-      return ids;
-    };
-
-    // get the ids of filters using type and field and value
-    this.idsByTypeAndFieldAndValue = function(type, field, value) {
-      var _require = {type:type, field:field, value:value};
-      return _.pluck(_.where(self.list,_require),'id');
-    };
-
-    // get the filters using type and field and value
-    this.filtersByTypeAndFieldAndValue = function(type, field, value) {
-      return _.where(self.list, {type: type, field: field, value: value});
     };
 
     this.idsByType = function(type,inactive) {

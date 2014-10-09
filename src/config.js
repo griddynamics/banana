@@ -66,7 +66,6 @@ function (Settings) {
       'bettermap',
       'query',
       'terms',
-      'terms_multiselect',
       'rangeFacet',
       'heatmap',
       'scatterplot',

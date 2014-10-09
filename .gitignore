@@ -1,5 +1,4 @@
 node_modules
 .aws-config.json
 dist
-/build
-/web
+bower_components
