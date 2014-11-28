@@ -40,12 +40,12 @@
     <label class="small" >Legend Format</label>
     <select class="input-small" ng-model="panel.arrangement" ng-options="f for f in ['horizontal','vertical']"></select></span>
   </div>
-  <div class="span1">
+  <!--  <div class="span1">
     <label class="small">Missing</label><input type="checkbox" ng-model="panel.missing" ng-checked="panel.missing">
   </div>
   <div class="span1">
     <label class="small">Other</label><input type="checkbox" ng-model="panel.other" ng-checked="panel.other">
-  </div>
+  </div>  -->
   <div class="span1" ng-show="panel.chart == 'pie'">
     <label class="small">Donut</label><input type="checkbox" ng-model="panel.donut" ng-checked="panel.donut">
   </div>
@@ -68,5 +68,9 @@
   <div class="span2">
     <label class="small">Display Precision <tip>The number of digits to display after the decimal point.</tip></label>
     <select class="input-mini" ng-model="panel.decimal_points" ng-options="f for f in [0,1,2,3,4,5,6,7,8,9]"></select>
+  </div>
+  <div class="span2">
+    <label class="small">Filter Mode<tip>Type of new filters created by that panel.</tip></label>
+    <select class="input-small" ng-model="panel.filterMode" ng-options="f for f in ['AND','OR']"></select></span>
   </div>
 </div>

@@ -1,4 +1,14 @@
 <div ng-controller='terms_multiselect' ng-init="init()">
+  <style>
+    .filter-mode-or {
+      border-top: #EF843C 3px solid;
+    }
+    .filter-mode-and {
+      border-top: #7EB26D 3px solid;
+    }
+  </style>
+  <div class="filter-mode-{{panel.filterMode.toLowerCase()}}"></div>
+
   <!-- START Pie or bar chart -->
   <div ng-show="panel.counter_pos == 'above' && (panel.chart == 'bar' || panel.chart == 'pie')" id='{{$id}}-legend'>
     <!-- vertical legend above -->

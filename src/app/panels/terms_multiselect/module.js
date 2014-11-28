@@ -54,14 +54,14 @@ function (angular, app, _, $, kbn) {
       },
       mode    : 'count', // mode to tell which number will be used to plot the chart.
       field   : '',
-      visibleHeight : 300, // default height of panel 
+      visibleHeight : 300, // default height of panel
+      filterMode : 'OR', // default mode for selected filters, possible values: AND('must'), OR('either')
       stats_field : '',
       decimal_points : 0, // The number of digits after the decimal point
       exclude : [],
       missing : true,
       other   : true,
       size    : 10,
-      // order   : 'count',
       order   : 'descending',
       style   : { "font-size": '10pt'},
       donut   : false,
@@ -216,12 +216,21 @@ function (angular, app, _, $, kbn) {
       return (foundFilters && foundFilters.length > 0)? foundFilters[0] : null;
     };
 
-    $scope.search_multiselect = function() {
+    $scope.search_multiselect = function(resetFilters) {
+      var mandateValue = 'either';
+      switch ($scope.panel.filterMode) {
+        case 'AND':
+          mandateValue = 'must';
+      }
       _.each($scope.data, function(v) {
         var isFilterPresent = !!$scope.getFilter(v.label);
+        if (isFilterPresent && resetFilters) { // then cleanup
+          filterSrv.removeByTypeAndFieldAndValue(componentItemType, $scope.panel.field, v.label);
+          isFilterPresent = false;
+        }
         if (v.isSelected) {
           if (!isFilterPresent) {
-            filterSrv.set({type: componentItemType,field:$scope.panel.field,value:v.label, mandate:'must', solrTag: $scope.getSolrTag()});
+            filterSrv.set({type: componentItemType,field:$scope.panel.field,value:v.label, mandate:mandateValue, solrTag: $scope.getSolrTag()});
           }
         } else {
           if (isFilterPresent) { // remove if present
@@ -246,6 +255,7 @@ function (angular, app, _, $, kbn) {
       }
       $scope.refresh =  false;
       $scope.$emit('render');
+      $scope.search_multiselect(true);
     };
 
     $scope.showMeta = function(term) {
@@ -351,7 +361,6 @@ function (angular, app, _, $, kbn) {
                       }
                     }
                   },
-                  //grid: { hoverable: true, clickable: true },
                   grid:   { hoverable: true, clickable: true },
                   colors: querySrv.colors
                 });
