@@ -28,7 +28,6 @@ function (angular, app, _, $, kbn) {
   app.useModule(module);
 
   module.controller('terms_multiselect', function($scope, querySrv, dashboard, filterSrv) {
-      $scope.panel.visibleHeight = 300;
       $scope.panelMeta = {
       modals : [
         {
@@ -55,6 +54,7 @@ function (angular, app, _, $, kbn) {
       },
       mode    : 'count', // mode to tell which number will be used to plot the chart.
       field   : '',
+      visibleHeight : 300, // default height of panel 
       stats_field : '',
       decimal_points : 0, // The number of digits after the decimal point
       exclude : [],
@@ -201,15 +201,6 @@ function (angular, app, _, $, kbn) {
           k++;
         });
 
-//        $scope.data.push({label:'Missing field',
-//          // data:[[k,results.facets.terms.missing]],meta:"missing",color:'#aaa',opacity:0});
-//          // TODO: Hard coded to 0 for now. Solr faceting does not provide 'missing' value.
-//          data:[[k,0]],meta:"missing",color:'#aaa',opacity:0});
-//        $scope.data.push({label:'Other values',
-//          // data:[[k+1,results.facets.terms.other]],meta:"other",color:'#444'});
-//          // TODO: Hard coded to 0 for now. Solr faceting does not provide 'other' value. 
-//          data:[[k+1,0]],meta:"other",color:'#444'});
-
         if (DEBUG) { console.debug('terms: $scope.data = ',$scope.data); }
 
         $scope.$emit('render');
@@ -240,30 +231,6 @@ function (angular, app, _, $, kbn) {
       });
       dashboard.refresh();
     };
-
-/*    $scope.toggle_multiselect = function(term) {
-      var defaultType = 'terms';
-      if(_.isUndefined(term.meta)) {
-        filterSrv.set({type:defaultType,field:$scope.panel.field,value:term.label, mandate:'must', solrTag: $scope.getSolrTag()});
-      } else if(term.meta === 'missing') {
-        filterSrv.set({type:'exists',field:$scope.panel.field, mandate:'mustNot', solrTag: $scope.getSolrTag()});
-      } else if(term.meta === defaultType) { // have it - then remove (un-checked box)
-        filterSrv.removeByTypeAndField(defaultType, $scope.panel.field);
-      }
-    };*/
-
-//    $scope.build_search = function(term,negate) {
-//      if(_.isUndefined(term.meta)) {
-//        filterSrv.set({type:'terms',field:$scope.panel.field,value:term.label,
-//          mandate:(negate ? 'mustNot':'must')});
-//      } else if(term.meta === 'missing') {
-//        filterSrv.set({type:'exists',field:$scope.panel.field,
-//          mandate:(negate ? 'must':'mustNot')});
-//      } else {
-//        return;
-//      }
-//      dashboard.refresh();
-//    };
 
     $scope.set_refresh = function (state) {
       $scope.refresh = state;
@@ -417,12 +384,6 @@ function (angular, app, _, $, kbn) {
           if (item) {
             // if (DEBUG) { console.debug('terms: plothover item = ',item); }
             var value = scope.panel.chart === 'bar' ? item.datapoint[1] : item.datapoint[1][0][1];
-
-            // if (scope.panel.mode === 'count') {
-            //   value = value.toFixed(0);
-            // } else {
-            //   value = value.toFixed(scope.panel.decimal_points);
-            // }
 
             $tooltip
               .html(

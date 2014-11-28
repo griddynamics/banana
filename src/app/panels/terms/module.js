@@ -26,7 +26,6 @@ function (angular, app, _, $, kbn) {
   app.useModule(module);
 
   module.controller('terms', function($scope, querySrv, dashboard, filterSrv) {
-      $scope.panel.visibleHeight = 300;
       $scope.panelMeta = {
       modals : [
         {
@@ -53,6 +52,7 @@ function (angular, app, _, $, kbn) {
       },
       mode    : 'count', // mode to tell which number will be used to plot the chart.
       field   : '',
+      visibleHeight : 300, // height of the panel
       stats_field : '',
       decimal_points : 0, // The number of digits after the decimal point
       exclude : [],

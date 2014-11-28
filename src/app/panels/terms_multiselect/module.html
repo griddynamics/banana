@@ -56,25 +56,10 @@
                 <td>{{term.data[0][1].toFixed(panel.decimal_points)}}</td>
                 <td>
                 <span ng-hide="term.meta == 'other'">
-                  <!-- <i class='icon-search pointer' ng-click="build_search(term)"></i> -->
-                  <!-- <i class='icon-ban-circle pointer' ng-click="build_search(term,true)"></i> -->
                   <input type="checkbox" ng-model="term.isSelected" ng-checked="term.isSelected" ng-click="search_multiselect()">
                 </span>
                 </td>
             </tr>
-
-            <!-- it's not clear for now, do we need this button or not -->
-            <!--tfoot>
-                <tr>
-                    <td>&nbsp;<input type="button" value="set color" ng-click="myStyle={color:'red'}"></td>
-                    <td>&nbsp;<span ng-style="myStyle" style="color:blue">Sample Text</span></td>
-                    <td>
-                        <button ng-click="search_multiselect()" style="color: yellow; font-weight: bold; background-color: black;">
-                            777Apply filters
-                        </button>
-                    </td>
-                </tr>
-            </tfoot-->
         </table>
     </div>
 
